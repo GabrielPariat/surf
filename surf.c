@@ -85,6 +85,7 @@ typedef enum {
 	Style,
 	WebGL,
 	ZoomLevel,
+	ClipboardNotPrimary,
 	ParameterLast
 } ParamName;
 
@@ -235,6 +236,7 @@ static void togglefullscreen(Client *c, const Arg *a);
 static void togglecookiepolicy(Client *c, const Arg *a);
 static void toggleinspector(Client *c, const Arg *a);
 static void find(Client *c, const Arg *a);
+static void playexternal(Client *c, const Arg *a);
 
 /* Buttons */
 static void clicknavigate(Client *c, const Arg *a, WebKitHitTestResult *h);
@@ -295,6 +297,7 @@ static ParamName loadcommitted[] = {
 	SpellLanguages,
 	Style,
 	ZoomLevel,
+	ClipboardNotPrimary,
 	ParameterLast
 };
 
@@ -1845,13 +1848,18 @@ showcert(Client *c, const Arg *a)
 void
 clipboard(Client *c, const Arg *a)
 {
+	/* User defined choice of selection, see config.h */
+	GdkAtom	selection = GDK_SELECTION_PRIMARY;
+	if (curconfig[ClipboardNotPrimary].val.i > 0)
+		selection = GDK_SELECTION_CLIPBOARD;
+
 	if (a->i) { /* load clipboard uri */
 		gtk_clipboard_request_text(gtk_clipboard_get(
-		                           GDK_SELECTION_PRIMARY),
+                                          selection),
 		                           pasteuri, c);
 	} else { /* copy uri */
 		gtk_clipboard_set_text(gtk_clipboard_get(
-		                       GDK_SELECTION_PRIMARY), c->targeturi
+		                       selection), c->targeturi
 		                       ? c->targeturi : geturi(c), -1);
 	}
 }
@@ -2003,6 +2011,15 @@ clickexternplayer(Client *c, const Arg *a, WebKitHitTestResult *h)
 	spawn(c, &arg);
 }
 
+void
+playexternal(Client *c, const Arg *a)
+{
+	Arg arg;
+
+	arg = (Arg)VIDEOPLAY(geturi(c));
+	spawn(c, &arg);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2143,7 +2160,11 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		arg.v = argv[0];
 	else
+#ifdef HOMEPAGE
+		arg.v = HOMEPAGE;
+#else
 		arg.v = "about:blank";
+#endif
 
 	setup();
 	c = newclient(NULL);
