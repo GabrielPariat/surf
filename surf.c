@@ -2020,6 +2020,23 @@ playexternal(Client *c, const Arg *a)
 	spawn(c, &arg);
 }
 
+void
+riptoradio(Client *c, const Arg *a)
+{
+	Arg arg;
+
+	arg = (Arg) {
+	  .v = (const char *[]){
+	    "/bin/sh",
+	    "-c", 
+	    "rip-to-radio \"$0\"",
+	    geturi(c),
+	    NULL 
+	  }
+	};
+	spawn(c, &arg);
+}
+
 int
 main(int argc, char *argv[])
 {
